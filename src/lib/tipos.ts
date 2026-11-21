@@ -29,4 +29,4 @@ export type ResultadoGuardar =
   | { tipo: 'conflicto'; actual: Nota }
   | { tipo: 'error'; mensaje: string };
 
-export type Vista = { tipo: 'todas' } | { tipo: 'carpeta'; id: string } | { tipo: 'papelera' };
+export type Vista = { tipo: 'agenda' } | { tipo: 'todas' } | { tipo: 'carpeta'; id: string } | { tipo: 'papelera' };

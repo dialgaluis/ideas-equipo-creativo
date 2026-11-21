@@ -3,7 +3,7 @@ rules_version = '2';
 // Ideas del equipo creativo — reglas de seguridad de Firestore.
 // Pega TODO este archivo en Firebase > Firestore Database > Reglas y pulsa "Publicar".
 //
-// Acceso sin login SOLO a las colecciones de la app (carpetas, notas, presencia).
+// Acceso sin login SOLO a las colecciones de la app (carpetas, notas, presencia, rutina, tareas, config).
 // Cualquier otra colección queda bloqueada. Se valida la forma de los datos.
 
 service cloud.firestore {
@@ -30,6 +30,31 @@ service cloud.firestore {
         && texto(request.resource.data.editado_por, 40)
         && (request.resource.data.carpeta_id == null || request.resource.data.carpeta_id is string)
         && fechaOpcional(request.resource.data.eliminada_en);
+    }
+
+    match /rutina/{id} {
+      allow read, delete: if true;
+      allow create, update: if texto(request.resource.data.actividad, 100)
+        && request.resource.data.actividad.size() > 0
+        && request.resource.data.hora is string
+        && request.resource.data.dias is list && request.resource.data.dias.size() <= 7
+        && request.resource.data.categoria in ['Gym', 'Contenido', 'Trabajo', 'Personal']
+        && request.resource.data.hechos is list && request.resource.data.hechos.size() <= 400;
+    }
+
+    match /tareas/{id} {
+      allow read, delete: if true;
+      allow create, update: if texto(request.resource.data.titulo, 200)
+        && request.resource.data.titulo.size() > 0
+        && request.resource.data.prioridad in ['alta', 'media', 'baja']
+        && request.resource.data.hecha is bool
+        && fechaOpcional(request.resource.data.fecha)
+        && texto(request.resource.data.autor, 40);
+    }
+
+    // Marca para crear los bloques de ejemplo una sola vez
+    match /config/{id} {
+      allow read, create: if true;
     }
 
     match /presencia/{id} {

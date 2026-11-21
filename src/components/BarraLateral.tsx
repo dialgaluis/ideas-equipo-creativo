@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { FileText, Folder, FolderPlus, Pencil, Trash2, Sun, Moon, MonitorSmartphone, Download, Upload, UserRound, X, Lightbulb } from 'lucide-react';
+import { CalendarDays, FileText, Folder, FolderPlus, Pencil, Trash2, Sun, Moon, MonitorSmartphone, Download, Upload, UserRound, X, Lightbulb } from 'lucide-react';
 import type { Carpeta, Nota, Vista } from '../lib/tipos';
 import type { Preferencia } from '../hooks/useTema';
 
@@ -71,6 +71,9 @@ export function BarraLateral(p: Props) {
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3">
+          <button className={item(p.vista.tipo === 'agenda')} onClick={() => elegir({ tipo: 'agenda' })}>
+            <CalendarDays size={18} /> <span className="flex-1">Mi día</span>
+          </button>
           <button className={item(p.vista.tipo === 'todas')} onClick={() => elegir({ tipo: 'todas' })}>
             <FileText size={18} /> <span className="flex-1">Todas las notas</span> <span className="text-xs text-stone-400">{activas.length}</span>
           </button>

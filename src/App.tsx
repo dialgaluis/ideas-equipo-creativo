@@ -15,6 +15,7 @@ import { TarjetaNota } from './components/TarjetaNota';
 import { EditorNota } from './components/EditorNota';
 import { Papelera } from './components/Papelera';
 import { Confirmar } from './components/Dialogo';
+import { Agenda } from './components/Agenda';
 
 type Pregunta = { titulo: string; mensaje: ReactNode; textoSi: string; peligro?: boolean; accion: () => Promise<void> | void };
 
@@ -105,7 +106,7 @@ function Aplicacion() {
     });
   };
 
-  const titulo = vista.tipo === 'todas' ? 'Todas las notas' : vista.tipo === 'papelera' ? 'Papelera' : carpetasActivas.get(vista.id) ?? 'Carpeta';
+  const titulo = vista.tipo === 'agenda' ? 'Mi día' : vista.tipo === 'todas' ? 'Todas las notas' : vista.tipo === 'papelera' ? 'Papelera' : carpetasActivas.get(vista.id) ?? 'Carpeta';
   const hayFiltros = busqueda || filtroAutor || filtroEtiquetas.length > 0;
 
   if (pidiendoNombre)
@@ -154,14 +155,14 @@ function Aplicacion() {
               <Menu size={20} />
             </button>
             <h1 className="min-w-0 flex-1 truncate text-xl font-bold">{titulo}</h1>
-            {vista.tipo !== 'papelera' && (
+            {vista.tipo !== 'papelera' && vista.tipo !== 'agenda' && (
               <button className="boton flex items-center gap-1" onClick={nuevaNota}>
                 <Plus size={18} /> <span className="hidden sm:inline">Nueva nota</span>
               </button>
             )}
           </div>
 
-          {vista.tipo !== 'papelera' && (
+          {vista.tipo !== 'papelera' && vista.tipo !== 'agenda' && (
             <>
               <div className="relative mt-3">
                 <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
@@ -226,6 +227,18 @@ function Aplicacion() {
             </div>
           )}
 
+          {estado === 'listo' && vista.tipo === 'agenda' && (
+            <Agenda
+              nombre={nombre}
+              notas={notas}
+              nombreCarpeta={(id) => (id ? carpetasActivas.get(id) : undefined)}
+              onAbrirNota={setAbiertaId}
+              onNuevaNota={nuevaNota}
+              onAlternarElemento={(n, elId) => intentar(() => acciones.alternarElemento(n, elId, nombre))}
+              preguntar={(titulo, mensaje, textoSi, accion) => setPregunta({ titulo, mensaje, textoSi, peligro: true, accion })}
+            />
+          )}
+
           {estado === 'listo' && vista.tipo === 'papelera' && (
             <Papelera
               carpetas={carpetas}
@@ -244,7 +257,7 @@ function Aplicacion() {
             />
           )}
 
-          {estado === 'listo' && vista.tipo !== 'papelera' && visibles.length === 0 && (
+          {estado === 'listo' && (vista.tipo === 'todas' || vista.tipo === 'carpeta') && visibles.length === 0 && (
             <div className="mx-auto max-w-sm py-20 text-center text-stone-500">
               <Lightbulb className="mx-auto text-violet-400" size={36} />
               {hayFiltros ? (
@@ -259,7 +272,7 @@ function Aplicacion() {
             </div>
           )}
 
-          {estado === 'listo' && vista.tipo !== 'papelera' && visibles.length > 0 && (
+          {estado === 'listo' && (vista.tipo === 'todas' || vista.tipo === 'carpeta') && visibles.length > 0 && (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {visibles.map((n: Nota) => (
                 <TarjetaNota
@@ -274,7 +287,7 @@ function Aplicacion() {
           )}
         </div>
 
-        {vista.tipo !== 'papelera' && (
+        {(vista.tipo === 'todas' || vista.tipo === 'carpeta') && (
           <button className="fixed bottom-5 right-5 z-20 grid h-14 w-14 place-items-center rounded-full bg-violet-600 text-white shadow-lg sm:hidden" style={{ marginBottom: 'env(safe-area-inset-bottom)' }} onClick={nuevaNota} aria-label="Nueva nota">
             <Plus size={26} />
           </button>
