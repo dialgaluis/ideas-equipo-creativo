@@ -225,6 +225,7 @@ export function EditorNota({ nota, carpetas, nombre, acciones, onCerrar, onAviso
           <input
             className="mt-4 w-full bg-transparent text-2xl font-bold outline-none placeholder:text-stone-300 dark:placeholder:text-stone-600"
             placeholder="Título"
+            autoFocus={!nota.titulo && !nota.contenido}
             value={titulo}
             maxLength={300}
             onChange={(e) => { setTitulo(e.target.value); marcar(); }}
