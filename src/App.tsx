@@ -3,7 +3,7 @@ import { Menu, Plus, Search, WifiOff, AlertTriangle, Loader2, X, Lightbulb } fro
 import { useDatos } from './hooks/useDatos';
 import { useTema } from './hooks/useTema';
 import { useConexion } from './hooks/useConexion';
-import { supabaseConfigurado } from './lib/supabase';
+import { firebaseConfigurado } from './lib/firebase';
 import { leerNombre, guardarNombre } from './lib/usuario';
 import { textoPlano } from './lib/sanitizar';
 import { ETIQUETAS } from './lib/etiquetas';
@@ -19,7 +19,7 @@ import { Confirmar } from './components/Dialogo';
 type Pregunta = { titulo: string; mensaje: ReactNode; textoSi: string; peligro?: boolean; accion: () => Promise<void> | void };
 
 export default function App() {
-  if (!supabaseConfigurado) return <FaltaConfigurar />;
+  if (!firebaseConfigurado) return <FaltaConfigurar />;
   return <Aplicacion />;
 }
 
@@ -312,13 +312,13 @@ function Aplicacion() {
 function FaltaConfigurar() {
   return (
     <div className="mx-auto max-w-lg p-8">
-      <h1 className="text-2xl font-bold">Falta conectar Supabase</h1>
+      <h1 className="text-2xl font-bold">Falta conectar Firebase</h1>
       <p className="mt-3 text-stone-600 dark:text-stone-400">
-        La app no encuentra las claves. Crea un archivo <code>.env</code> (copiando <code>.env.example</code>) y pega tu
-        <b> Project URL</b> y tu clave pública <b>anon</b>. Luego reinicia con <code>npm run dev</code>.
+        La app no encuentra la configuración de Firebase. Crea un archivo <code>.env</code> (copiando <code>.env.example</code>),
+        pega los datos de tu app web de Firebase y reinicia con <code>npm run dev</code>.
       </p>
-      <p className="mt-3 text-stone-600 dark:text-stone-400">En Vercel: agrega esas dos variables en Settings → Environment Variables y vuelve a desplegar.</p>
-      <p className="mt-3 text-sm text-stone-500">Instrucciones completas en el archivo GUIA-SUPABASE.md.</p>
+      <p className="mt-3 text-stone-600 dark:text-stone-400">En GitHub: agrega esos datos en Settings → Secrets and variables → Actions → Variables y vuelve a publicar.</p>
+      <p className="mt-3 text-sm text-stone-500">Instrucciones completas en el archivo GUIA-FIREBASE.md.</p>
     </div>
   );
 }

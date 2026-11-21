@@ -12,7 +12,7 @@ import { BarraEditor } from './BarraEditor';
 import { ListaElementos } from './ListaElementos';
 import { SelectorEtiquetas } from './Etiquetas';
 import { Dialogo } from './Dialogo';
-import { supabase } from '../lib/supabase';
+import { usePresencia } from '../hooks/usePresencia';
 import { limpiarPegado, sanitizar } from '../lib/sanitizar';
 import type { Acciones } from '../hooks/useDatos';
 import type { CamposNota, Carpeta, Elemento, Nota } from '../lib/tipos';
@@ -27,30 +27,6 @@ type Props = {
 };
 
 type EstadoGuardado = 'guardado' | 'pendiente' | 'guardando' | 'error';
-
-/** Mantiene a quién más tiene abierta esta nota (presencia en tiempo real). */
-function usePresencia(notaId: string, nombre: string) {
-  const [otros, setOtros] = useState<string[]>([]);
-  useEffect(() => {
-    const yo = crypto.randomUUID();
-    const canal = supabase.channel(`nota-${notaId}`, { config: { presence: { key: yo } } });
-    canal
-      .on('presence', { event: 'sync' }, () => {
-        const estado = canal.presenceState<{ nombre: string }>();
-        const nombres = Object.entries(estado)
-          .filter(([clave]) => clave !== yo)
-          .flatMap(([, v]) => v.map((x) => x.nombre));
-        setOtros([...new Set(nombres)]);
-      })
-      .subscribe((s) => {
-        if (s === 'SUBSCRIBED') canal.track({ nombre });
-      });
-    return () => {
-      supabase.removeChannel(canal);
-    };
-  }, [notaId, nombre]);
-  return otros;
-}
 
 export function EditorNota({ nota, carpetas, nombre, acciones, onCerrar, onAviso }: Props) {
   const [titulo, setTitulo] = useState(nota.titulo);

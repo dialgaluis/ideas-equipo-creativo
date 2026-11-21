@@ -1,0 +1,42 @@
+rules_version = '2';
+
+// Ideas del equipo creativo — reglas de seguridad de Firestore.
+// Pega TODO este archivo en Firebase > Firestore Database > Reglas y pulsa "Publicar".
+//
+// Acceso sin login SOLO a las colecciones de la app (carpetas, notas, presencia).
+// Cualquier otra colección queda bloqueada. Se valida la forma de los datos.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function texto(v, max) { return v is string && v.size() <= max; }
+    function fechaOpcional(v) { return v == null || v is string; }
+
+    match /carpetas/{id} {
+      allow read, delete: if true;
+      allow create, update: if texto(request.resource.data.nombre, 80)
+        && request.resource.data.nombre.size() > 0
+        && fechaOpcional(request.resource.data.eliminada_en);
+    }
+
+    match /notas/{id} {
+      allow read, delete: if true;
+      allow create, update: if texto(request.resource.data.titulo, 300)
+        && texto(request.resource.data.contenido, 500000)
+        && request.resource.data.etiquetas is list && request.resource.data.etiquetas.size() <= 20
+        && request.resource.data.elementos is list && request.resource.data.elementos.size() <= 500
+        && request.resource.data.version is int
+        && texto(request.resource.data.autor, 40)
+        && texto(request.resource.data.editado_por, 40)
+        && (request.resource.data.carpeta_id == null || request.resource.data.carpeta_id is string)
+        && fechaOpcional(request.resource.data.eliminada_en);
+    }
+
+    match /presencia/{id} {
+      allow read, delete: if true;
+      allow create, update: if texto(request.resource.data.nombre, 40)
+        && request.resource.data.nota_id is string
+        && request.resource.data.visto is string;
+    }
+  }
+}

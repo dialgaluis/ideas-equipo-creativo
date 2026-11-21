@@ -1,4 +1,5 @@
-import { supabase } from './supabase';
+import { doc, writeBatch } from 'firebase/firestore';
+import { db, colCarpetas, colNotas } from './firebase';
 import { sanitizar } from './sanitizar';
 import type { Carpeta, Nota } from './tipos';
 
@@ -26,33 +27,41 @@ export async function importarRespaldo(archivo: File, nombre: string): Promise<{
     throw new Error('Este archivo no es un respaldo de esta app.');
   }
 
-  // Carpetas nuevas (con ids nuevos) y mapa viejo → nuevo
+  const ahora = new Date().toISOString();
+  const escrituras: [ReturnType<typeof doc>, Record<string, unknown>][] = [];
+
+  // Carpetas nuevas (ids nuevos) y mapa viejo → nuevo
   const mapa = new Map<string, string>();
-  const carpetasActivas = (datos.carpetas ?? []).filter((c) => !c.eliminada_en);
-  for (const c of carpetasActivas) {
-    const { data, error } = await supabase.from('carpetas').insert({ nombre: String(c.nombre).slice(0, 80) || 'Sin nombre' }).select().single();
-    if (error) throw error;
-    mapa.set(c.id, (data as Carpeta).id);
+  for (const c of (datos.carpetas ?? []).filter((c) => !c.eliminada_en)) {
+    const ref = doc(colCarpetas);
+    mapa.set(c.id, ref.id);
+    escrituras.push([ref, { nombre: String(c.nombre).slice(0, 80) || 'Sin nombre', creado_en: ahora, eliminada_en: null }]);
   }
 
-  const filas = datos.notas
-    .filter((n) => !n.eliminada_en)
-    .map((n) => ({
-      titulo: String(n.titulo ?? '').slice(0, 300),
-      carpeta_id: n.carpeta_id ? mapa.get(n.carpeta_id) ?? null : null,
-      contenido: sanitizar(String(n.contenido ?? '')),
-      etiquetas: Array.isArray(n.etiquetas) ? n.etiquetas.map(String) : [],
-      elementos: Array.isArray(n.elementos)
-        ? n.elementos.map((e) => ({ id: crypto.randomUUID(), texto: String(e.texto ?? ''), hecho: Boolean(e.hecho) }))
-        : [],
-      autor: String(n.autor || nombre),
-      editado_por: nombre,
-      creado_en: n.creado_en || new Date().toISOString(),
-    }));
-
-  for (let i = 0; i < filas.length; i += 100) {
-    const { error } = await supabase.from('notas').insert(filas.slice(i, i + 100));
-    if (error) throw error;
+  const notas = datos.notas.filter((n) => !n.eliminada_en);
+  for (const n of notas) {
+    escrituras.push([
+      doc(colNotas),
+      {
+        titulo: String(n.titulo ?? '').slice(0, 300),
+        carpeta_id: n.carpeta_id ? mapa.get(n.carpeta_id) ?? null : null,
+        contenido: sanitizar(String(n.contenido ?? '')),
+        etiquetas: Array.isArray(n.etiquetas) ? n.etiquetas.map(String) : [],
+        elementos: Array.isArray(n.elementos) ? n.elementos.map((e) => ({ id: crypto.randomUUID(), texto: String(e.texto ?? ''), hecho: Boolean(e.hecho) })) : [],
+        autor: String(n.autor || nombre),
+        editado_por: nombre,
+        creado_en: n.creado_en || ahora,
+        editado_en: ahora,
+        version: 1,
+        eliminada_en: null,
+      },
+    ]);
   }
-  return { carpetas: mapa.size, notas: filas.length };
+
+  for (let i = 0; i < escrituras.length; i += 450) {
+    const b = writeBatch(db);
+    escrituras.slice(i, i + 450).forEach(([ref, d]) => b.set(ref, d));
+    await b.commit();
+  }
+  return { carpetas: mapa.size, notas: notas.length };
 }
